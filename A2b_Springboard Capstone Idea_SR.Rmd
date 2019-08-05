@@ -1,0 +1,32 @@
+---
+title: "                   **Springboard Capstone Project Idea**          "
+output: html_document
+---
+
+
+
+## **The Problem**
+
+The viability of Higher Education Institutions relies on their ability to retain and graduate students.   Hence retention rate is an important factor to understand and predict for institutions.  The primary goal of this project is to gain a deeper understanding of the relationship between the retention rate and other selected variables at Post-Secondary Institutions in the state of Georgia.  
+
+## **The Datasets**
+
+The data for this project was obtained from the National Center for Education Statistics IPEDS Institutional Data for 2017. This data set includes information for all 171 Post Secondary Institutions in the State of Georgia.  Retention rate is the dependent variable,i.e. what we want to predict.The data is available at <http://www.data.gov>. Specifically data from the Integrated Postsecondary Education System (IPEDS) was used for this project;i.e. <https://nces.ed.gov/ipeds/datacenter/DataFiles.aspx>.The initial data set contained the following data; Institutions in the State of Georgia for 2017, where n = 171; Variables included the following:
+
+
+* Total price for in state students living on campus
+* Total price for out-of-state students living on campus
+* Total price for out-of-state students living off campus
+* Total price for in state students living off campus
+* Full Time Retention Rate    (Dependent Variable)
+* Student-to-faculty ratio
+* Total men undergraduate
+* Total women undergraduate
+
+
+Data wrangling, statistics, and the appropriate regression model will be used in analyzing possible relationships between the relevant variables. The best variables for predicting the retention rate will be identified.  The deliverables will include a paper or slide deck which includes the code.
+
+
+
+
+

@@ -1,0 +1,311 @@
+---
+title: "Retention (Data Story)"
+author: "Sandra Rucker"
+date: "8/3/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+## **Introduction**
+
+
+The viability of Higher Education Institutions relies on their ability to retain and graduate students.   Hence retention rate is an important factor to understand and predict for institutions.  The primary goal of this project is to gain a deeper understanding of the relationship between the retention rate and other selected variables at Post-Secondary Institutions in the state of Georgia.  
+
+## **The Datasets**
+
+The data for this project was obtained from the National Center for Education Statistics IPEDS Institutional Data for 2017. This data set includes information for all 171 Post Secondary Institutions in the State of Georgia.  Retention rate is the dependent variable,i.e. what we want to predict.The data is available at <http://www.data.gov>. Specifically data from the Integrated Postsecondary Education System (IPEDS) was used for this project;i.e. <https://nces.ed.gov/ipeds/datacenter/DataFiles.aspx>.The initial data set contained the following data; Institutions in the State of Georgia for 2017, where n = 171; 
+
+Variables include the following:
+* Total price for in state students living on campus
+* Total price for out-of-state students living on campus
+* Total price for out-of-state students living off campus
+* Total price for in state students living off campus
+* Full Time Retention Rate    (Dependent Variable)
+* Student-to-faculty ratio
+* Total men undergraduate
+* Total women undergraduate
+
+Data wrangling, statistics, and regression analysis was used in analyzing possible relationships between the relevant variables. The best variables for predicting the retention rate were identified.  
+
+## **Data Wrangling and Cleaning** 
+
+
+Load necessary packages - Install the packages before loading.
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(plyr)
+```
+
+Read the data frame that will be used when performing the data wrangling techniques.
+```{r}
+df <- read.csv("Data_Retention.csv")
+```
+
+
+Determine the names of the variables in your data frame.
+
+```{r}
+names(df) 
+```
+
+Rationale for Removing Data;Removing Columns
+
+Some Institutions in the state of Georgia do not have dormitories or on campus housing for students and do not have price data for those variables.  Two columns (variables) were removed based on the huge amount of missing data.  The two columns removed were Total price for in state students living on campus (Price_IO), and Total price for out of state students living on campus (Price_OO).   Sixty-five percent, i.e. 112/171, of the Institutions had missing data in these columns.  The institutions either do not have on campus housing or did not submit data for variables as it relates to Total price for on campus housing in the year 2017.
+
+
+Remove Variables(columns)
+
+```{r}
+df<-select(df, -c(Total.price.for.in.state.students.living.on.campus.2017.18..DRVIC2017.,Total.price.for.out.of.state.students.living.on.campus.2017.18..DRVIC2017.))
+
+```
+
+Determine the names of the variables in your data frame to ensure the correct columns were deleted.
+
+```{r}
+names(df) 
+```
+
+
+Rename Variables(columns)
+
+There was a need to change the names of the columns because the column names were too long for ease of use.The column names for the variables were shortened for coding efficiency and accuracy in describing the data. 
+
+
+```{r}
+df<- rename(df, c("Total.women..EF2017..All.students..Undergraduate.total." = "Wom",
+"Total.men..EF2017..All.students..Undergraduate.total."= "Men", "Student.to.faculty.ratio..EF2017D." = "SF_Ratio", "Full.time.retention.rate..2017..EF2017D."="Reten", "Total.price.for.in.state.students.living.off.campus..not.with.family...2017.18..DRVIC2017."="Price_IF", "Total.price.for.out.of.state.students.living.off.campus..not.with.family...2017.18..DRVIC2017."="Price_OF", "Institution.Name"="Inst"))
+```
+
+
+Determine if the variables in df are correct after renaming.
+```{r}
+names(df) 
+```
+
+Removing Missing Data;(Removing rows that do not contain data for the selected variables)
+
+The variable we wish to predict is Retention Rate.   There were 26 Institutions which listed no data regarding Retention Rate.   The value of 26 was obtained in the following manner; there was 16 Institutions which provided no data for any of the 8 variables we are considering, and there were 10 Institutions which provided no data values for Retention in the year 2017. 
+
+Delete the schools that have NA for retention.  Several syntx operations were tried but failied, there has to be an easier way to perform this operation.
+```{r}
+df_clean <- df[-c(8,16,17,21,27,37,43,58,59,60,68,71,79,91,93,94,95,96,102,108,114,133,135,140,142,170),]
+```
+
+
+Create a csv file of the clean data frame.  The clean data frame is labelled as df_clean.
+We will then make a second level cleaning of the frame and label it as df_clean1.   The rationale for the second level of cleaning is the
+following.  Most Post Secondary Schools which list no price information in the list are not Academic Colleges or Universities but are professional schools such as Beauty Schools, etc. Since we are primary interested in understanding retention at Colleges and Universities, these schools were removed.   
+
+```{r}
+write.csv(df_clean, file = "df_clean.csv")
+
+```
+```{r}
+df_clean1 <- na.omit(df_clean)
+```
+
+Create a csv file of the clean data frame.  The clean data frame is labelled as df_clean.
+```{r}
+write.csv(df_clean1, file = "df_clean1.csv")
+
+```
+
+**Rationale for Machine Learning**
+
+The data downloaded from the site www.data.gov  in a certain format.  We are interested in the Retention Rate and variables which may affect retention.  The Retention data was not given at the student level, i.e. where 1 would specify that a student is retained, and 0 would specify that a student was not retained. Only summarized data is given, not 0’s and 1’s. Hence, the data given from the site was at the summary level.  That is, the percentage of students who were retained, or returned was listed for each institution in the data set.  That percentage depends on the total student population at each respective institution.  Since the output variable is a continuous variable rounded to the nearest unit, a linear regression model will be used.  The Retention rate is given as the percentage of students who return to the institution.  The value is a summary value, that is if an institution has 5000 students and 3000 of the students return to the campus then the Retention rate is 3000/5000 or .6 which is 60%.  Multiple variable linear regression seemed to fit best as there are more than one independent variable used to predict a college’s retention rate.  
+
+## Statistics and Machine Learning  
+In order to explore the potential relationships between variables related to the status of retention rates in colleges and universities in Georgia, we begin by reading the clean statistics data file.    
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse) #The swiss knife!
+library(dplyr)
+```
+
+
+Now that the packages  are loaded, we can read the data into R. 
+
+```{r}
+stats <- read.csv("df_stats.csv")
+```
+
+
+## Exploratory Data Analysis
+
+Now that we have read in the data, let us start exploring it. The first thing to do is to have a quick look at our data. For that, we can use the `str()` function or the more human readable (and intuitive), `glimpse()` function.
+
+```{r}
+glimpse(stats)
+```
+
+```{r}
+stats$Status <- as.factor(stats$Status)
+```
+
+
+```{r}
+hist(stats$Reten,main="Histogram of Retention",xlab="Institutions",border="blue",col="red")
+```
+
+```{r}
+summary(stats$Reten)
+```
+hist(stats$SF_Ratio,main="Histogram of Student Faculty Ratio",xlab="Student Faculty Ratio", ylab = "Frequency",border="blue", col="red",ylim = c(0,40),las=1,breaks=8)
+```{r}
+hist(stats$SF_Ratio,main="Histogram of Student Faculty Ratio",xlab="Student Faculty Ratio", ylab = "Frequency",border="red", col="blue",ylim = c(0,40),las=1,breaks=8)
+```
+
+
+
+```{r}
+summary(stats$SF_Ratio)
+```
+
+```{r}
+attach(stats)
+```
+
+
+```{r}
+plot(SF_Ratio,Reten, main="Scatterplot of Reten. and SF_Ratio", 
+   xlab="Student Faculty Ratio ", ylab="Retention Rate ", col ="purple", pch=19)
+
+
+```
+
+```{r}
+cor(stats$SF_Ratio,stats$Reten)
+```
+
+
+```{r}
+stats$Status <- ifelse(stats$Status == 1, 'High Rate', 'Low Rate')
+ggplot(stats, aes(x = SF_Ratio, y = Reten, color=Status)) +
+
+  geom_point() + geom_jitter()
+```
+
+```{r}
+
+ggplot(stats, aes(x = Wom, y = Reten, color=Status)) +
+
+  geom_point() + geom_jitter()
+```
+
+```{r}
+ggplot(stats, aes(x = Men, y = Reten, color=Status)) +
+
+  geom_point() + geom_jitter()
+```
+
+
+```{r}
+pairs(~Reten+SF_Ratio+Wom,data=stats,main="Scatterplot Matrix")
+```
+
+
+```{r}
+pairs(~Reten+SF_Ratio+Men,data=stats,main="Scatterplot Matrix2")
+```
+
+
+
+```{r}
+pairs(~Reten+Price_OF+Price_IF+SF_Ratio,data=stats,main="Scatterplot Matrix3")
+```
+
+
+
+
+```{r}
+bp <- ggplot(stats, aes(x=Status, y=Reten, fill=Status)) + 
+  geom_boxplot()+
+  labs(title="Plot of Retention",x="Retention Status", y = "Retention Percentage")+
+scale_x_discrete(limits=c("Low Rate", "High Rate"))
+bp + theme_classic()
+```
+
+
+```{r}
+
+bp <- ggplot(stats, aes(x=Status, y=SF_Ratio, fill=Status)) + 
+  geom_boxplot()+
+  labs(title="      Plot of Student Faculty Ratio by Retention Status",x="Retention Status", y = "Student Faculty Ratio")+
+  scale_x_discrete(limits=c("Low Rate", "High Rate"))
+bp + theme_classic()
+```
+
+
+```{r}
+plot(Price_OF,Reten, main="Scatterplot of Price for Students", 
+   xlab="Price for Off Campus Stud ", ylab="Retention Rate ", col= "blue", pch=19)
+
+```
+
+```{r}
+summary(Price_OF)
+```
+
+
+```{r}
+Model1 <- lm(stats$Reten~stats$SF_Ratio+stats$Wom+stats$Price_OF+stats$Price_IF)
+```
+
+```{r}
+summary(Model1)
+```
+
+
+```{r}
+Model2 <- lm(stats$Reten~stats$Wom+stats$Price_OF+stats$Price_IF)
+```
+
+
+```{r}
+summary(Model2)
+```
+
+```{r}
+Model3 <- lm(stats$Reten~stats$Price_OF+stats$Price_IF)
+```
+
+```{r}
+summary(Model3)
+```
+
+```{r}
+Model4 <- lm(stats$Reten~stats$SF_Ratio)
+```
+
+
+```{r}
+summary(Model4)
+```
+```{r}
+Model5 <- lm(Reten~Price_OF, data = stats)
+```
+
+```{r}
+summary(Model5)
+```
+
+
+```{r}
+Model6 <- lm(stats$Reten~stats$Wom)
+```
+
+
+```{r}
+summary(Model6)
+```
+**Conclusions**
+Considering the variables studied, the linear regression model revealed that the strongest predicor of Retention was the variable Price_OF. There was not a significant relationship between SF_Ratio and Retention. The other variables were not as strongly related to Retention.
+
+**Recommendations**
+
+**Future Work**
+
+

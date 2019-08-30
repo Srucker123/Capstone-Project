@@ -1,0 +1,341 @@
+---
+title: "An Analysis of Retention Rates"
+author: "Author: Sandra Rucker"
+date: "8/3/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+### **The Problem**
+
+
+The viability of Higher Education Institutions relies on their ability to retain and graduate students.  The revenues of both nonprofit and for profit educational institutions are affected by the number of students that attend the institutions. Some of these institutions rely heavily on student enrollment which is a by product of the Retention rate. Hence retention rate is an important factor for institutions to understand and predict.  The primary goal of this project is to gain a deeper understanding of the relationship between the retention rate and other selected variables at Higher Education Institutions, i.e., Post-Secondary Institutions in the state of Georgia. We decided to focus on data obtained in the year 2017. The data was obtained from a very credible source.  The data was obtained from one of the United States governments' educational databases. Understanding important variables which affect retention rates at Institutions will permit administrators to make more informed decisions regarding the adequacy of their pricing schemes.  So, we will explore several issues related to Retention rates.  Our primary explanatory variable of interest is the Student Faculty ratio.  This is a value which tells us how many students on average are associated with one professor in the classroom at a particular Institution. First the average values for the Retention rates and the Student Faculty ratios will be determined. Secondly, we will explore whether or how Student Faculty Ratios at Institutions affect Retention rates.  Next we will examine whether other variables significantly affect Retention rates. Some of the other variables which will be evaluated include the prices for attending the Institutions, and the gender of students. Our initial questions of interest are listed below.
+
+1. What is the average retention rate for post secondary institutions in the state of Georgia? 
+2. What is the average student to faculty ratio in the state of Georgia?
+3. What is the relationship between the Retention rate and the Student to Faculty ratio?
+4. Is the relationship between Retention rate and Student to Faculty ratio statistically significant?
+5. Are the relationships between Retention rate and the other variables in the dataset statistically significant?
+6. What are the best explanatory variable(s) that could be used to predict the Retention rate?
+
+
+
+
+### **The Datasets **
+
+The data for this project was obtained from the National Center for Education Statistics IPEDS Institutional Data for 2017. This data set includes information for all 171 Post Secondary Institutions in the State of Georgia in the United States of America.  Retention rate is the dependent variable,i.e. what we want to predict.The data is available at <http://www.data.gov>. Specifically data from the Integrated Postsecondary Education System (IPEDS) was used for this project,i.e. <https://nces.ed.gov/ipeds/datacenter/DataFiles.aspx>.The initial data set contained the following data; Institutions in the State of Georgia for 2017, where n = 171; 
+
+Variables include the following:
+
+*  Total price for in state students living on campus-------(Price_IO)  
+*  Total price for out-of-state students living on campus--(Price_OO)
+*  Total price for out-of-state students living off campus--(Price_OF)
+*  Total price for in state students living off campus-------(Price_IF)
+*  Full Time Retention Rate--------------------------------------(Reten)    
+*  Student-to-faculty ratio-----------------------------------------(SF_Ratio)
+*  Total men undergraduate--------------------------------------(Men)
+*  Total women undergraduate----------------------------------(Wom)
+
+
+### **Methods**
+
+Data wrangling, statistics, and regression analysis were used in analyzing possible relationships between the predictor variable and the explanatory variables. The best variables for predicting the retention rate were identified.  
+
+
+**Data Wrangling and Cleaning** 
+
+The following process was used to ensure that the datasets were in a format that could be used in our analyses. First we installed and loaded the needed packages.The tidyverse and plyr packages were needed for the cleaning process.
+
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(plyr)
+```
+
+The data frame that will be used when performing the data wrangling techniques was read, using the "read" command. The data set included the entire list of 171 Post-secondary Institutions. 
+
+```{r}
+df <- read.csv("Data_Retention.csv")
+```
+
+We list the names of the Institutions in the data frame.  Notice that the names are quite long, and will be abbreviated or shortened.  
+
+```{r}
+names(df) 
+```
+
+**Rationale for Removing Data**
+
+Some Institutions in the state of Georgia do not have dormitories or on campus housing for students and do not have price data for those variables.  Two columns (variables) were removed based on the huge amount of missing data.  The two columns removed were Total price for in state students living on campus (Price_IO), and Total price for out of state students living on campus (Price_OO).   Sixty-five percent, i.e. 112/171, of the Institutions had missing data in these columns.  The institutions either do not have on campus housing or did not submit data for variables as it relates to Total price for on campus housing in the year 2017.
+
+```{r}
+df<-select(df, -c(Total.price.for.in.state.students.living.on.campus.2017.18..DRVIC2017.,Total.price.for.out.of.state.students.living.on.campus.2017.18..DRVIC2017.))
+```
+
+We determined the names of the variables in the data frame to ensure that the correct columns were deleted.
+
+```{r}
+names(df) 
+```
+
+
+**Renaming Variables**
+
+There was a need to change the names of the columns because the column names were too long for ease of use.The column names for the variables were shortened for coding efficiency and accuracy in describing the data. 
+
+
+```{r}
+df<- rename(df, c("Total.women..EF2017..All.students..Undergraduate.total." = "Wom",
+"Total.men..EF2017..All.students..Undergraduate.total."= "Men", "Student.to.faculty.ratio..EF2017D." = "SF_Ratio", "Full.time.retention.rate..2017..EF2017D."="Reten", "Total.price.for.in.state.students.living.off.campus..not.with.family...2017.18..DRVIC2017."="Price_IF", "Total.price.for.out.of.state.students.living.off.campus..not.with.family...2017.18..DRVIC2017."="Price_OF", "Institution.Name"="Inst"))
+```
+
+
+We Determined if the variables in df were correct after renaming.
+```{r}
+names(df) 
+```
+
+Removing Missing Data
+
+The variable we wish to predict is Retention Rate.   There were 26 Institutions which listed no data regarding Retention Rate.   The value of 26 was obtained in the following manner; there was 16 Institutions which provided no data for any of the 8 variables we are considering, and there were 10 Institutions which provided no data values for Retention in the year 2017. 
+
+We deleted the schools that have NA for retention.  
+```{r}
+df_clean <- df[-c(8,16,17,21,27,37,43,58,59,60,68,71,79,91,93,94,95,96,102,108,114,133,135,140,142,170),]
+```
+
+Next we create a csv file of the clean data frame.  The clean data frame is labeled df_clean.
+We will then make a second level cleaning of the frame and label it as df_clean1.   The rationale for the second level of cleaning is the
+following.  Most Post Secondary Schools which list no price information in the list are not Academic Colleges or Universities but are professional schools such as Beauty Schools, etc. Since we are primarily interested in understanding retention at Colleges and Universities, these schools were removed.   
+
+```{r}
+write.csv(df_clean, file = "df_clean.csv")
+
+```
+```{r}
+df_clean1 <- na.omit(df_clean)
+```
+
+We created a csv file of the clean data frame.  The clean data frame is labelled as df_clean.
+```{r}
+write.csv(df_clean1, file = "df_clean1.csv")
+
+```
+
+### **Exploratory and Statistical Analyses**
+
+
+The data was downloaded from the site <https://www.data.gov>  in a certain format.  We are interested in the Retention Rate and variables which may affect retention.  The Retention data was not given at the student level, i.e. where 1 would specify that a student is retained, and 0 would specify that a student was not retained. Only summarized data is given, not 0’s and 1’s. Hence, the data given from the site was at the summary level.  That is, the percentage of students who were retained, or returned was listed for each institution in the data set.  That percentage depends on the total student population at each respective institution.  Since the output variable is a continuous variable rounded to the nearest unit, a linear regression model will be used.  The Retention rate is given as the percentage of students who return to the institution.  Multiple variable linear regression seemed to fit best because there is more than one independent variable used to predict a college’s retention rate. In order to explore the potential relationships between variables related to the status of retention rates in colleges and universities in Georgia, we begin by reading the clean data file.    
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(dplyr)
+```
+
+
+Now that the packages are loaded, we read the data into R. 
+
+```{r}
+stats <- read.csv("df_clean1.csv")
+```
+
+Now that we have read in the data, let us start exploring it. The first thing to do is to have a quick look at our data. For that, we can use the `str()` function or the more human readable (and intuitive), `glimpse()` function.
+
+```{r}
+glimpse(stats)
+```
+
+The first issue we wish to address is the values of the retention rates at the Institutions in the study, and to find the average value of those retention rates. To obtain a visual picture of the retention rates, a histogram was created.  Viewing the histogram gives us a feel for the average values of the "*mean*" and "*median*".  But to get the precise values, we follow by running the summary.
+
+
+```{r}
+hist(stats$Reten,main="Histogram of Retention",xlab="Institutions",border="blue",col="red")
+```
+
+The summary shows that the mean Retention rate is 61.61.   This implies that colleges and universities which had a value for Retention rate of at least 61.61 are retaining students at an average rate or better compared to all colleges and universities in the state of Georgia in 2017.
+
+```{r}
+summary(stats$Reten)
+```
+
+The second issue we are interested in is the Student Faculty ratio at each college and university.  We created a histogram which shows the Student Faculty ratios at the institutions.  The visual gives an indication of the average values, but more precise information regarding the average values for the mean and median are given in the summary data which follows.
+
+
+```{r}
+hist(stats$SF_Ratio,main="Histogram of Student Faculty Ratio",xlab="Student Faculty Ratio", ylab = "Frequency",border="red", col="blue",ylim = c(0,40),las=1,breaks=8)
+```
+
+The summary shows that the mean Student Faculty ratio is 15.92 and rounding up gives 16, since you cannot have 15.92 of a person.    This implies that colleges and universities which had a value for Student Faculty ratio of at least 15.92 have a Student faculty ratio which is at the average value or better compared to all colleges and universities in the state of Georgia in 2017.  The median value is 15.50, which rounded up also gives the value of 16. So we observe that on the average there are 16 students to one professor in the college classroom in the state of Georgia.
+
+
+```{r}
+summary(stats$SF_Ratio)
+```
+
+
+```{r}
+attach(stats)
+```
+Our next step is to examine the relationships of the variables in the data set.  We first created a scatterplot, because scatterplots tell us if the variables seem to be related in a meaningful way.  Scatterplots will confirm if there seems to be a meaningful linear relationship among the variables. From the scatterplot between Student Faculty Ratio and Retention, we see that Student Faculty Ratio and Retention are not strongly related. The scatterplot is shown below.
+
+
+```{r}
+plot(SF_Ratio,Reten, main="Scatterplot of Reten. and SF_Ratio", 
+   xlab="Student Faculty Ratio ", ylab="Retention Rate ", col ="purple", pch=19)
+```
+
+We obtained a visual representation of another variable in the dataset. We created a scatterplot of the number of undergraduate women and the Retention rate.  The scatterplot below shows that there appears to be a stronger linear relationship between the number of undergraduate women and Retention rate than between Student Faculty ratio and the Retention rate. 
+
+```{r}
+
+ggplot(stats, aes(x = Wom, y = Reten, color="1")) +
+
+  geom_point() + geom_jitter()
+```
+
+We then developed several scatter matrices which show the relationships between all variables in the dataset. Inspection of the scatter matrices below shows that there is a linear relationship between the price of students who live off campus and Retention. Possible correlations between the explanatory variables also appear. This will be investigated.
+
+```{r}
+pairs(~Reten+SF_Ratio+Wom+Men,data=stats,main="Scatterplot Matrix1")
+```
+
+Scatterplot1 indicates a strong linear relationship between the number of undergraduate women, Wom, and the number of undergraduate men, Men.  The correlation coefficient below is **.9369** which is a very high value for correlation, i.e, close to 1.  Hence, when developing a linear model, only one of these explanatory variables should be used.  
+
+```{r}
+cor(stats$Wom,stats$Men)
+
+```
+
+
+```{r}
+pairs(~Reten+Price_OF+Price_IF+SF_Ratio,data=stats,main="Scatterplot Matrix2")
+```
+
+Results from the visualization of the scatter matrices, led to the creation of two additional scatter plots involving the prices.  The plots indicate a linear relationship between Retention and the price data.  That is, prices for out of state students who live off campus, Price_OF and the prices for in state students who live off campus, Price_IF seem to be related to the Retention rate.  Note that in the state of Georgia prices for students who are not residents of the state of Georgia and hence are out of state students is more at state colleges and universities.  Hence it is usually more expensive for students attending state colleges and universities in the state of Georgia, and this may be a factor which affects the Retention rates.  It may also be more expensive for students who are in state students but must live in off campus housing.  The scatter plots which follow show a linear relationship between prices for students who live off campus and Retention.  We see in the scatter matrices a relationship between Price_OF and Price_IF.  We will examine the correlation between the variables below.
+
+```{r}
+
+plot(Price_IF,Reten, main="Scatterplot of Price for In State/Off Campus Students", 
+   xlab="Price (Price_IF)", ylab="Retention Rate ", col= "blue", pch=19)
+
+
+```
+
+
+```{r}
+plot(Price_OF,Reten, main="Scatterplot of Price for Out of State/Off Campus Students", 
+   xlab="Price (Price_OF)", ylab="Retention Rate ", col= "blue", pch=19)
+
+```
+
+
+```{r}
+summary(Price_OF)
+```
+
+We find that the correlation coefficient between Price_OF and Price_IF is very high, i.e., close to 1.  The correlation coefficient shown below is **.9158**.   This indicates that the price for out of state students who live off campus, Price_OF and the price for in state students who live off campus, Price_IF, are strongly correlated.  Hence in a multiple linear regression model, only one of these variables should be used. 
+
+```{r}
+cor(stats$Price_OF, stats$Price_IF)
+```
+
+### **Linear Regression Models**
+
+The linear regression model addresses the following research questions.
+
+1. Research Question 1: Is the relationship between Retention rate and Student to Faculty ratio statistically significant?
+2. Research Question 2: Are the relationships between Retention rate and the other variables in the dataset statistically significant?
+3. Research Question 3: What are the best explanatory variable(s) that could be used to predict Retention rate?
+
+We begin with a multiple linear regression model which includes all the variables in our dataset following the data wrangling process. In multiple linear regression we can first consider all the explanatory variables, and after evaluating the summary report, remove variables which are not useful.  That is, we will remove from the model variables which are not significantlly significant. This method is called the backward elimination strategy. The backward elimination strategy begins with the full model which includes all possible explanatory variables and eliminates variables one at a time, until we are only left with variables which are statistically significant.
+
+```{r}
+Model1 <- lm(stats$Reten~stats$SF_Ratio+stats$Wom+stats$Price_OF+stats$Price_IF+stats$Men)
+```
+
+```{r}
+Model1
+```
+
+```{r}
+summary(Model1)
+```
+
+The most important column in the summary table is the column which indicates the probability values or the p-values. The p-value indicates whether a particular explanatory variable is statistically significant in the given model. The summary data for the first multiple linear regression model, Model1, indicates that the price for out of state students who live off campus Price_OF has ** which means that this value has statistical significance in this model. The p-value for Price_OF is .00121.  The variable Price_IF has **.** listed which means that it has significance, but not at or below the .05 level. We reject the Null hypothesis, and there is a  high statistically significant relationship between the predictor variable, Retention, and the variable Price_OF.  Note that the variable Men has the largest p-value and is not statistically significant in Model1. The adjusted R squared value is .3186.
+
+```{r}
+Model2 <- lm(stats$Reten~stats$SF_Ratio+stats$Wom+stats$Price_OF+stats$Price_IF)
+
+```
+
+
+```{r}
+summary(Model2)
+```
+
+We ran the second linear multiple regression model, Model2, omitting the variable denoting the number of undergraduate men, Men. We omitted Men because it had the largest p-value in Model1. The p-value for Men was .754 in the previous model. We also note that the variable Men and Wom, are highly correlated, hence only 1 of these variables should be used in a linear multiple regression model. In the current model, Model2, the variable SF_Ratio has the largest p value, p = .31357 and is  not statistically significant in the model. This variable will be removed in the next model. The variable Price_OF still has **, i.e. high statistical significance with p-value =.00117 which is less than its p-value in the previous model. The adjusted R squared value has increased in this model, Model2 to .3248.
+
+```{r}
+Model3 <- lm(stats$Reten~stats$Wom+stats$Price_OF+stats$Price_IF)
+```
+
+
+```{r}
+summary(Model3)
+```
+
+The summary table for the third model, Model3, includes the variables, Price_OF, Price_IF and Wom. The p-value for Price_OF is the most significant variable with p-value = .00136.  The other two variables also show some significance, but not below the p-value of .05. We will run another model omitting Price_IF since it is highly correlated with Price_OF,and only one of highly correlated variables should be used in a linear multiple regression model.
+
+```{r}
+Model4 <- lm(stats$Reten~stats$Price_OF+stats$Wom)
+```
+
+```{r}
+summary(Model4)
+```
+
+The fourth linear multiple regression model, Model4, includes the variables Price_OF, and Wom. the summary table shows that Price_OF with p-value = .000000519 and Wom with p-value = .000239 are highly statistically significant in this model.  We omitted the explanatory variable Price_IF since it is highly corrected with Price_OF. Since both of the variables Price_OF and Wom have high statistical significance in Model4, we want to know how individual linear regression models look with each of the variables paired with the predictor variable, Retention.
+
+
+```{r}
+Model5 <- lm(stats$Reten~stats$Wom)
+```
+
+```{r}
+summary(Model5)
+```
+
+We ran the fifth linear regression model to view the relationship of the variable Wom, the number of undergraduate women and Reten, the Retention rate. We know that in most colleges and universities in Georgia in 2017, more women attend colleges than men.  So, this might explain significance between the Wom and Reten variables.  The summary data in Model5 shows high statistical significance for Wom, i.e. p-value = .000146 and _***_. Note that the adjusted R squared value = .124, which is quite low.
+
+```{r}
+Model6 <- lm(Reten~Price_OF, data = stats)
+```
+
+```{r}
+summary(Model6)
+```
+
+We ran a sixth linear regression model, Model6, to view the relationship of the variable Price_OF, the price for out of state students who live off campus and Retention. The summary data in Model6 shows high statistical significance for Price_OF, i.e. p-value = .00000030 and _***_. 
+
+A plot of the regression line for Price of out of state students who live off campus and Retention rate was completed. 
+
+```{r}
+plot(stats$Price_OF, stats$Reten, main="Regresssion Line for Price of Students", 
+   xlab="Price for Off Campus Stud (Price_OF) ", ylab="Retention Rate ", col= "blue", pch=19)
+
+abline(lm(Reten ~Price_OF, data=stats), col ="red")
+```
+
+
+### **Conclusions**
+
+We found that our original speculation was incorrect. We thought that the Student Faculty ratio might have a significant relationship with the Retention rate. The analysis shows that Student Faculty Ratio (SF_Ratio) is not statistically significant for predicting the Retention rate (Reten). There were many issues to consider when determining the best model given the variables under consideration.  After all considerations, we are left with two models for more discussion, Model4 includes one explanatory variable, Price_OF and Model6 includes two explanatory variables, Price_OF and Wom.  Even though Model6 has the lowest p-value, i.e. p-value = .0000003 for Price_OF.  The adjusted R squared value for Model6 is .2202. Model4 has p-value = .000000536 for the price of attendance for out of state students who live off campus (Price_OF) and .000239 for the number of undergraduate women (Wom). The adjusted R squared value for Model4 is .3115. We will select Model4 as the best model given our data set because the adjusted R squared value is higher and both variables have high statistical significance, i.e. p-values below .05, which corresponds to rejecting the Null hypothesis. Hence the strongest predictors of Retention were the price of attendance for students from out of state who lived off campus, Price_OF and the number of undergraduate women students, Wom. It is noted that in the state of Georgia, the cost of tuition at state colleges and universities is usually more expensive for out of state students than the cost for in state students who are Georgia residents. It could be that their ability to continue at the institutions, i.e., their ability to be retained is cost dependent. Therefore, the Retention rates at these institutions seem to be statistically related to the price charged to out of state students who live off campus and the number of undergraduate women who attend the institution. The other variables considered were not as strongly related to Retention.
+
+### **Recommendations**
+
+The study gives evidence to support the recommendation that colleges and universities in the state of Georgia, consistently evaluate their prices if student retention is an issue of concern and importance.  Secondly, we note that discussions regarding equalizing the cost of attendance for out of state and in state students at state colleges be considered if increasing the Retention Rate is a priority.  Results indicate that the number of undergraduate women who attend these institutions should also enter into considerations.  Given that the number of men and women are highly correlated, increasing the male population at these institutions also is advised.
+
+### **Future Work**
+
+All post-secondary Institutions in the state of Georgia were included in the initial data set of this study.  The state of Georgia is considered a Southern State.  Future studies could replicate this study using all colleges and universities in either the Southern, Northern, Eastern, or Western States of the United States.   A more comprehensive study would include all colleges and universities in the United States. Another worthy study would involve increasing the number and type of variables in the dataset. Hence, the model could possibly be improved by adding other variables to the dataset.  Additional variables could lead to a more precise regression model.  The  most robust model might result from engaging in a time series analysis of Retention over multiple years at all colleges and universities in the United States.
